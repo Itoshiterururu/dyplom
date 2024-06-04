@@ -30,7 +30,7 @@ class App:
         subprocess.run([sys.executable, "graph.py"])
 
     def open_officer_management(self):
-        subprocess.run([sys.executable, "officer_management.py"])
+        subprocess.run([sys.executable, "officers_graph.py"])
 
     def perform_distribution(self):
         messagebox.showinfo("Distribution", "Виконати розподіл курсантів функція буде реалізована тут.")

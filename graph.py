@@ -27,6 +27,25 @@ class App:
         self.view_button = ttk.Button(root, text="View Cadets by Year", command=self.view_cadets_by_year)
         self.view_button.pack(pady=5)
 
+        # Widgets for sorting criteria
+        self.physical_fitness_label = ttk.Label(root, text="Physical Fitness:")
+        self.physical_fitness_label.pack(pady=5)
+        self.physical_fitness_entry = ttk.Entry(root)
+        self.physical_fitness_entry.pack(pady=5)
+
+        self.course_label = ttk.Label(root, text="Course:")
+        self.course_label.pack(pady=5)
+        self.course_entry = ttk.Entry(root)
+        self.course_entry.pack(pady=5)
+
+        self.skills_label = ttk.Label(root, text="Skills:")
+        self.skills_label.pack(pady=5)
+        self.skills_entry = ttk.Entry(root)
+        self.skills_entry.pack(pady=5)
+
+        self.sort_button = ttk.Button(root, text="Sort Cadets", command=self.view_cadets_by_year)
+        self.sort_button.pack(pady=5)
+
         self.tree = ttk.Treeview(root, columns=("ID", "Name", "Specialty", "Rating"), show='headings')
         self.tree.heading("ID", text="ID")
         self.tree.heading("Name", text="Name")
@@ -84,7 +103,6 @@ class App:
         field = self.details_tree.item(item, "values")[0]
         self.make_editable(item, field)
 
-    # Add update_cadet_field method to update a single field in the database
     def update_cadet_field(self, field, value):
         if not self.current_cadet_id or not self.current_year:
             return
@@ -97,7 +115,6 @@ class App:
         elif field == "Courses":
             update_path[f"years.{self.current_year}.courses"] = [course.strip() for course in value.split(",")]
         else:
-            # Assuming fields like "Name" and "Specialty"
             update_path[field.lower()] = value
 
         cadets_collection.update_one({"_id": self.current_cadet_id}, {"$set": update_path})
@@ -157,7 +174,16 @@ class App:
         self.year_entry.insert(0, year)
 
         cadets = cadets_collection.find({f"years.{year}": {"$exists": True}})
-        cadet_list = [(cadet['_id'], cadet['name'], cadet['specialty'], self.calculate_rating(cadet['years'][year]['scores'], cadet['years'][year]['physical_fitness'], cadet['years'][year]['discipline'])) for cadet in cadets]
+        cadet_list = []
+        for cadet in cadets:
+            if self.physical_fitness_entry.get().strip() and cadet['years'][year]['physical_fitness'] != int(self.physical_fitness_entry.get().strip()):
+                continue
+            if self.course_entry.get().strip() and self.course_entry.get().strip() not in cadet['years'][year].get('courses', []):
+                continue
+            if self.skills_entry.get().strip() and not any(skill.strip() in cadet.get('skills', []) for skill in self.skills_entry.get().strip().split(',')):
+                continue
+            cadet_list.append((cadet['_id'], cadet['name'], cadet['specialty'], self.calculate_rating(cadet['years'][year]['scores'], cadet['years'][year]['physical_fitness'], cadet['years'][year]['discipline'])))
+
         cadet_list.sort(key=lambda x: x[3], reverse=True)
 
         for row in self.tree.get_children():
